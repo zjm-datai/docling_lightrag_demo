@@ -1,0 +1,17 @@
+{
+  "title": "001_test",
+  "content_file": "docling_content.md",
+  "metadata_file": "docling_metadata.json",
+  "chunks_file": "docling_chunks.json",
+  "content_length": 77631,
+  "chunk_count": 107,
+  "metadata": {
+    "source_file": "c:\\Desktop\\project\\science_research\\sra_agent\\resources\\001_test.pdf",
+    "file_name": "001_test.pdf",
+    "file_suffix": ".pdf",
+    "title": "001_test",
+    "num_texts": 313,
+    "num_tables": 3,
+    "num_pictures": 2
+  }
+}
