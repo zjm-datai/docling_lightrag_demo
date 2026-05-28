@@ -1,0 +1,14 @@
+{
+  "research_goal": "研究特应性皮炎儿童人群的炎症通路调控",
+  "research_direction": "肠皮轴、Th2 免疫调控",
+  "outcome_indicators": "EASI、瘙痒评分、IL-4、IgE",
+  "innovation_points": ["理论创新", "方法创新", "应用创新"],
+  "research_type": "药理机制",
+  "output_purpose": "基金申报",
+  "selected_literature": ["系统推荐文献标题或ID"],
+  "uploaded_literature": ["001_test.pdf"],
+  "manual_literature": ["标题/DOI/PMID"],
+  "focus_mechanism": "IL-4/IL-13 相关炎症通路",
+  "focus_drug_or_formula": "",
+  "include_safety_economics": true
+}

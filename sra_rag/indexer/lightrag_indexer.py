@@ -115,13 +115,20 @@ class LightRAGIndexer:
 
     def __init__(
         self,
-        working_dir: str = "./sra_rag_data",
-        llm_base_url: str = "http://211.90.240.240:30001/v1",
-        llm_api_key: str = "gpustack_ba7863cefc4126b2_4ecbb5f42c239594a33e67ef49bdce9d",
-        llm_model: str = "Qwen3-30B-A3B-GPTQ-Int4",
-        embedding_model: str = "bge-m3",
-        embedding_dim: int = 1024,
+        *,
+        working_dir: str,
+        llm_base_url: str,
+        llm_api_key: str,
+        llm_model: str,
+        embedding_model: str,
+        embedding_dim: int,
         max_token_size: int = 8192,
+        default_llm_timeout: int = 180,
+        llm_model_max_async: int = 4,
+        entity_extract_max_gleaning: int = 1,
+        max_extract_input_tokens: int = 20480,
+        chunk_token_size: int = 1200,
+        chunk_overlap_token_size: int = 100,
     ):
         """初始化 LightRAG 索引器。
 
@@ -133,6 +140,12 @@ class LightRAGIndexer:
             embedding_model: Embedding 模型名称
             embedding_dim: Embedding 向量维度
             max_token_size: 最大 token 大小
+            default_llm_timeout: LightRAG 单次 LLM 调用超时时间（秒）
+            llm_model_max_async: LightRAG LLM 并发数
+            entity_extract_max_gleaning: 实体关系补充抽取轮数
+            max_extract_input_tokens: 实体关系抽取输入 token 上限
+            chunk_token_size: LightRAG chunk token 大小
+            chunk_overlap_token_size: LightRAG chunk overlap token 大小
         """
         self.working_dir = working_dir
         self.llm_base_url = llm_base_url
@@ -165,6 +178,12 @@ class LightRAGIndexer:
             llm_model_name=llm_model,
             embedding_func=embedding_func,
             chunking_func=self._docling_chunker,
+            default_llm_timeout=default_llm_timeout,
+            llm_model_max_async=llm_model_max_async,
+            entity_extract_max_gleaning=entity_extract_max_gleaning,
+            max_extract_input_tokens=max_extract_input_tokens,
+            chunk_token_size=chunk_token_size,
+            chunk_overlap_token_size=chunk_overlap_token_size,
         )
 
         # LightRAG 1.4+ 需要手动初始化存储

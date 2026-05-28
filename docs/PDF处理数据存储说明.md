@@ -23,7 +23,7 @@
 C:\Desktop\project\science_research\sra_agent\sra_rag_data_test\
 ```
 
-或者默认配置：
+宿主项目也可以显式传入其他工作目录，例如：
 ```
 C:\Desktop\project\science_research\sra_agent\sra_rag_data\
 ```
@@ -218,7 +218,7 @@ sra_agent/
 
 1. **保留索引数据**：避免重复索引，节省 API 调用
 2. **定期检查存储**：使用 `du -sh sra_rag_data_test/` 查看大小
-3. **备份重要配置**：虽然数据文件不提交，但配置要保存
+3. **保存宿主项目参数**：虽然数据文件不提交，但传给 `create_sra_rag(...)` 的参数要由宿主项目管理
 4. **监控 API 使用**：索引过程会调用 LLM API
 
 ---

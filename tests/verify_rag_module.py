@@ -18,15 +18,17 @@ def check_module_imports():
             DoclingParser,
             LightRAGIndexer,
             LightRAGRetriever,
-            RAGConfig,
-            default_config,
+            SraRagOptions,
+            create_sra_rag,
+            normalize_rag_options,
         )
 
         print("✓ DoclingParser 导入成功")
         print("✓ LightRAGIndexer 导入成功")
         print("✓ LightRAGRetriever 导入成功")
-        print("✓ RAGConfig 导入成功")
-        print("✓ default_config 导入成功")
+        print("✓ SraRagOptions 导入成功")
+        print("✓ create_sra_rag 导入成功")
+        print("✓ normalize_rag_options 导入成功")
         return True
 
     except Exception as e:
@@ -34,33 +36,40 @@ def check_module_imports():
         return False
 
 
-def check_config():
-    """检查配置。"""
+def check_options():
+    """检查外部传入参数。"""
     print("\n" + "=" * 60)
-    print("检查配置...")
+    print("检查外部传入参数...")
     print("=" * 60)
 
     try:
-        from sra_rag import RAGConfig, default_config
+        from sra_rag import SraRagOptions, normalize_rag_options
 
-        # 检查默认配置
-        print(f"✓ 工作目录: {default_config.working_dir}")
-        print(f"✓ LLM 模型: {default_config.llm_model}")
-        print(f"✓ Embedding 模型: {default_config.embedding_model}")
-        print(f"✓ 嵌入维度: {default_config.embedding_dim}")
+        options = normalize_rag_options(
+            {
+                "working_dir": "./sra_rag_data_test",
+                "llm": {
+                    "base_url": "http://example.test/v1",
+                    "api_key": "test-key",
+                    "model": "test-chat-model",
+                },
+                "embedding": {
+                    "model": "test-embedding-model",
+                    "dim": 1024,
+                },
+            }
+        )
 
-        # 检查配置序列化
-        config_dict = default_config.to_dict()
-        print(f"✓ 配置序列化成功 ({len(config_dict)} 个字段)")
-
-        # 检查配置反序列化
-        config_obj = RAGConfig.from_dict(config_dict)
-        print(f"✓ 配置反序列化成功")
+        assert isinstance(options, SraRagOptions)
+        print(f"✓ 工作目录: {options.working_dir}")
+        print(f"✓ LLM 模型: {options.llm_model}")
+        print(f"✓ Embedding 模型: {options.embedding_model}")
+        print(f"✓ 嵌入维度: {options.embedding_dim}")
 
         return True
 
     except Exception as e:
-        print(f"✗ 配置检查失败: {e}")
+        print(f"✗ 外部传入参数检查失败: {e}")
         return False
 
 
@@ -179,7 +188,8 @@ def check_file_structure():
 
     required_files = [
         "sra_rag/__init__.py",
-        "sra_rag/config.py",
+        "sra_rag/options.py",
+        "sra_rag/factory.py",
         "sra_rag/parser/__init__.py",
         "sra_rag/parser/base.py",
         "sra_rag/parser/docling_parser.py",
@@ -218,7 +228,7 @@ def main():
     checks = [
         ("文件结构", check_file_structure),
         ("模块导入", check_module_imports),
-        ("配置", check_config),
+        ("外部传入参数", check_options),
         ("解析器", check_parser),
         ("索引器", check_indexer),
         ("检索器", check_retriever),

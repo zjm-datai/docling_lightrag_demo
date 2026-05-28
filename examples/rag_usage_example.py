@@ -5,7 +5,24 @@
 
 from pathlib import Path
 
-from sra_rag import DoclingParser, LightRAGIndexer, LightRAGRetriever
+from sra_rag import (
+    DoclingParser,
+    LightRAGIndexer,
+    LightRAGRetriever,
+    SraRagOptions,
+    create_sra_rag,
+)
+
+
+EXAMPLE_OPTIONS = SraRagOptions(
+    working_dir="./sra_rag_data",
+    llm_base_url="http://your-api/v1",
+    llm_api_key="your-api-key",
+    llm_model="your-chat-model",
+    embedding_model="your-embedding-model",
+    embedding_dim=1024,
+    max_token_size=8192,
+)
 
 
 def example_basic_usage():
@@ -33,7 +50,15 @@ def example_basic_usage():
 
     # 2. 索引文档
     print("\n步骤 2: 索引文档")
-    indexer = LightRAGIndexer(working_dir="./sra_rag_data")
+    indexer = LightRAGIndexer(
+        working_dir=EXAMPLE_OPTIONS.working_dir,
+        llm_base_url=EXAMPLE_OPTIONS.llm_base_url,
+        llm_api_key=EXAMPLE_OPTIONS.llm_api_key,
+        llm_model=EXAMPLE_OPTIONS.llm_model,
+        embedding_model=EXAMPLE_OPTIONS.embedding_model,
+        embedding_dim=EXAMPLE_OPTIONS.embedding_dim,
+        max_token_size=EXAMPLE_OPTIONS.max_token_size,
+    )
     doc_id = indexer.index_document(parsed_doc)
     print(f"  文档 ID: {doc_id}")
 
@@ -57,8 +82,8 @@ def example_different_modes():
     print("=" * 60)
 
     # 假设已经初始化了 indexer
-    # indexer = LightRAGIndexer()
-    # retriever = LightRAGRetriever(indexer)
+    # rag = create_sra_rag(EXAMPLE_OPTIONS)
+    # retriever = rag.retriever
 
     modes = ["naive", "local", "global", "hybrid"]
     query = "什么是图神经网络？"
@@ -70,31 +95,17 @@ def example_different_modes():
         # print(f"  答案: {result[0].content[:100]}...")
 
 
-def example_config():
-    """配置示例。"""
+def example_factory():
+    """统一入口示例。"""
     print("\n" + "=" * 60)
-    print("配置示例")
+    print("统一入口示例")
     print("=" * 60)
 
-    from sra_rag import RAGConfig
-
-    # 使用默认配置
-    config = RAGConfig()
-    print(f"\n默认配置:")
-    print(f"  工作目录: {config.working_dir}")
-    print(f"  LLM 模型: {config.llm_model}")
-    print(f"  Embedding 模型: {config.embedding_model}")
-    print(f"  嵌入维度: {config.embedding_dim}")
-
-    # 自定义配置
-    custom_config = RAGConfig(
-        working_dir="./custom_rag_data",
-        llm_model="custom-model",
-        embedding_dim=768,
-    )
-    print(f"\n自定义配置:")
-    print(f"  工作目录: {custom_config.working_dir}")
-    print(f"  LLM 模型: {custom_config.llm_model}")
+    print("外部项目负责读取配置，然后传入 create_sra_rag。")
+    print(f"  工作目录: {EXAMPLE_OPTIONS.working_dir}")
+    print(f"  LLM 模型: {EXAMPLE_OPTIONS.llm_model}")
+    print(f"  Embedding 模型: {EXAMPLE_OPTIONS.embedding_model}")
+    print(f"  嵌入维度: {EXAMPLE_OPTIONS.embedding_dim}")
 
 
 def example_batch_processing():
@@ -104,7 +115,8 @@ def example_batch_processing():
     print("=" * 60)
 
     parser = DoclingParser()
-    indexer = LightRAGIndexer()
+    rag = create_sra_rag(EXAMPLE_OPTIONS)
+    indexer = rag.indexer
 
     # 批量解析和索引
     doc_dir = Path("./documents")
@@ -125,5 +137,5 @@ if __name__ == "__main__":
     # 运行示例
     example_basic_usage()
     example_different_modes()
-    example_config()
+    example_factory()
     example_batch_processing()

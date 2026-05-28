@@ -1,13 +1,15 @@
 
+```bash
+uv run python examples/embed_documents_example.py resources/001_test.pdf \
+  --embed-mode index \
+  --working-dir ./sra_rag_data_test \
+  --llm-base-url http://211.90.240.240:30001/v1 \
+  --llm-api-key gpustack_ba7863cefc4126b2_4ecbb5f42c239594a33e67ef49bdce9d \
+  --llm-model Qwen3-30B-A3B-GPTQ-Int4 \
+  --embedding-model bge-m3 \
+  --embedding-dim 1024
+```
 
-sub_agents 目录中创建了所有 9 个文件：
 
-- overview.py - 概览分析功能
-- research_status.py - 研究现状分析
-- innovation.py - 创新点评估
-- research_ideas.py - 研究创意生成
-- safety.py - 安全性评估
-- economics.py - 经济可行性分析
-- hotspot.py - 研究热点识别
-- conclusion.py - 结论生成
-- reviewer.py - 评审功能
+
+

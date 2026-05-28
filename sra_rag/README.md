@@ -36,48 +36,48 @@ graph TB
 
 ## 快速开始
 
-### 1. 基本使用
+### 1. 统一入口
 
 ```python
 from pathlib import Path
-from sra_rag import DoclingParser, LightRAGIndexer, LightRAGRetriever
+from sra_rag import SraRagOptions, create_sra_rag
+
+options = SraRagOptions(
+    working_dir="./rag_data",
+    llm_base_url="http://your-api/v1",
+    llm_api_key="your-api-key",
+    llm_model="your-chat-model",
+    embedding_model="your-embedding-model",
+    embedding_dim=1024,
+    max_token_size=8192,
+)
+rag = create_sra_rag(options)
 
 # 解析文档
-parser = DoclingParser()
-parsed_doc = parser.parse(Path("paper.pdf"))
+parsed_doc = rag.parser.parse(Path("paper.pdf"))
 
 # 索引文档
-indexer = LightRAGIndexer(working_dir="./rag_data")
-doc_id = indexer.index_document(parsed_doc)
+doc_id = rag.indexer.index_document(parsed_doc)
 
 # 检索
-retriever = LightRAGRetriever(indexer)
-results = retriever.retrieve("什么是图神经网络？", mode="hybrid")
+results = rag.retriever.retrieve("什么是图神经网络？", mode="hybrid")
 print(results[0].content)
 ```
 
-### 2. 自定义配置
+### 2. 直接构造底层组件
 
 ```python
-from sra_rag import RAGConfig, LightRAGIndexer
+from sra_rag import LightRAGIndexer, LightRAGRetriever
 
-# 自定义配置
-config = RAGConfig(
+indexer = LightRAGIndexer(
     working_dir="./custom_rag_data",
     llm_base_url="http://your-api/v1",
-    llm_model="your-model",
-    embedding_model="bge-m3",
+    llm_api_key="your-api-key",
+    llm_model="your-chat-model",
+    embedding_model="your-embedding-model",
     embedding_dim=1024,
 )
-
-# 使用自定义配置初始化索引器
-indexer = LightRAGIndexer(
-    working_dir=config.working_dir,
-    llm_base_url=config.llm_base_url,
-    llm_model=config.llm_model,
-    embedding_model=config.embedding_model,
-    embedding_dim=config.embedding_dim,
-)
+retriever = LightRAGRetriever(indexer)
 ```
 
 ### 3. 不同检索模式
@@ -101,14 +101,13 @@ result = retriever.retrieve("请解释 AI、ML、DL 的关系", mode="hybrid")
 ```python
 from pathlib import Path
 
-parser = DoclingParser()
-indexer = LightRAGIndexer()
+rag = create_sra_rag(options)
 
 # 批量索引
 doc_dir = Path("./documents")
 for file_path in doc_dir.glob("*.pdf"):
-    parsed_doc = parser.parse(file_path)
-    indexer.index_document(parsed_doc)
+    parsed_doc = rag.parser.parse(file_path)
+    rag.indexer.index_document(parsed_doc)
 ```
 
 ## 模块结构
@@ -116,7 +115,8 @@ for file_path in doc_dir.glob("*.pdf"):
 ```
 sra_rag/
 ├── __init__.py              # 模块导出
-├── config.py                # 配置管理
+├── options.py               # 外部传入参数类型
+├── factory.py               # 统一创建入口
 ├── parser/                  # 文档解析器
 │   ├── __init__.py
 │   ├── base.py             # 解析器抽象基类
@@ -162,26 +162,11 @@ sra_rag/
 - 返回结构化检索结果
 - 支持带上下文的检索
 
-## 配置说明
+## 参数说明
 
-### 默认配置
-
-```python
-working_dir = "./sra_rag_data"
-llm_base_url = "http://211.90.240.240:30001/v1"
-llm_model = "Qwen3-30B-A3B-GPTQ-Int4"
-embedding_model = "bge-m3"
-embedding_dim = 1024
-```
-
-### 环境变量
-
-可以通过环境变量覆盖配置：
-- `RAG_WORKING_DIR`: 工作目录
-- `RAG_LLM_BASE_URL`: LLM API 地址
-- `RAG_LLM_API_KEY`: LLM API 密钥
-- `RAG_LLM_MODEL`: LLM 模型名称
-- `RAG_EMBEDDING_MODEL`: Embedding 模型名称
+`sra_rag` 不读取项目内配置文件，也不读取环境变量。宿主项目负责管理运行参数，
+然后组装成 `SraRagOptions` 传给 `create_sra_rag(...)`。同一个 options 对象也可以
+作为 `sra_agent` 的 `llm_options` 使用。底层组件仍可直接显式传参。
 
 ## 数据存储
 
@@ -198,10 +183,32 @@ LightRAG 会在工作目录下生成以下文件：
 2. **Embedding 模型固定**：一旦开始索引，不能更改 Embedding 模型
 3. **LLM 要求较高**：建议使用 32B 以上参数的模型，上下文长度至少 32K
 4. **异步处理**：Embedding 生成使用异步请求，确保网络畅通
+5. **实体关系抽取可能超时**：如果日志出现 `Task forcefully terminated due to execution timeout`，
+   通常是 LightRAG 调用 LLM 抽取实体/关系时超时。可以降低 `--llm-max-async`、
+   降低 `--chunk-token-size`，或提高 `--llm-timeout`。
 
 ## 示例代码
 
-完整示例请查看 `examples/rag_usage_example.py`
+完整示例请查看：
+- `examples/rag_usage_example.py`: RAG 基础用法
+- `examples/embed_documents_example.py`: 文档解析和嵌入入库脚本，支持 `--embed-mode`
+
+超时较多时可以这样运行：
+
+```bash
+uv run python examples/embed_documents_example.py resources/001_test.pdf \
+  --embed-mode index \
+  --working-dir ./sra_rag_data_test \
+  --llm-base-url http://your-api/v1 \
+  --llm-api-key your-api-key \
+  --llm-model your-chat-model \
+  --embedding-model your-embedding-model \
+  --embedding-dim 1024 \
+  --llm-timeout 600 \
+  --llm-max-async 1 \
+  --chunk-token-size 800 \
+  --entity-extract-max-gleaning 0
+```
 
 ## 依赖
 

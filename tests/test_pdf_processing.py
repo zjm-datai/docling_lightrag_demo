@@ -110,6 +110,7 @@ def test_indexing(parsed_doc, working_dir: str = "./sra_rag_data_test"):
         indexer = LightRAGIndexer(
             working_dir=working_dir,
             llm_base_url="http://211.90.240.240:30001/v1",
+            llm_api_key="replace-with-api-key",
             llm_model="Qwen3-30B-A3B-GPTQ-Int4",
             embedding_model="bge-m3",
             embedding_dim=1024,

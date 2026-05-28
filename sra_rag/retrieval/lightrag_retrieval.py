@@ -27,6 +27,8 @@ class LightRAGRetriever(BaseRetriever):
     def __init__(
         self,
         indexer: LightRAGIndexer,
+        *,
+        default_query_options: dict[str, Any] | None = None,
     ):
         """初始化 LightRAG 检索器。
 
@@ -35,6 +37,15 @@ class LightRAGRetriever(BaseRetriever):
         """
         self.indexer = indexer
         self.rag = indexer.rag
+        self.default_query_options = {
+            "only_need_context": True,
+            "max_entity_tokens": 2000,
+            "max_relation_tokens": 2000,
+            "max_total_tokens": 6000,
+            "chunk_top_k": 8,
+            "enable_rerank": False,
+            **(default_query_options or {}),
+        }
 
     def retrieve(
         self,
@@ -57,10 +68,16 @@ class LightRAGRetriever(BaseRetriever):
         logger.info(f"执行 LightRAG 检索: query='{query}', mode={mode}")
 
         try:
-            param = QueryParam(mode=mode, top_k=top_k, **kwargs)
+            query_options = {**self.default_query_options, **kwargs}
+            param = QueryParam(mode=mode, top_k=top_k, **query_options)
             result = self.rag.query(query, param=param)
+            logger.info(f"LightRAG 检索结果: {result}")
+            if result is None:
+                raise RuntimeError("LightRAG returned None for query result.")
 
-            # LightRAG 返回的是完整答案，包装为 RetrievalResult
+            # With only_need_context=True, LightRAG returns the retrieved context
+            # instead of a generated answer. This keeps downstream reports tied
+            # to source snippets and avoids hallucinated citation numbers.
             retrieval_result = RetrievalResult(
                 content=result,
                 metadata={
@@ -76,7 +93,21 @@ class LightRAGRetriever(BaseRetriever):
 
         except Exception as e:
             logger.error(f"LightRAG 检索失败: {e}")
-            raise
+            return [
+                RetrievalResult(
+                    content=(
+                        "LightRAG 检索失败，已跳过本次检索证据。"
+                        f"错误信息: {e}"
+                    ),
+                    metadata={
+                        "mode": mode,
+                        "query": query,
+                        "retriever": "lightrag",
+                        "error": str(e),
+                    },
+                    score=0.0,
+                )
+            ]
 
     def retrieve_with_context(
         self,
